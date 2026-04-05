@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NGT Revision Cards — Next Generation Technology</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0ede8;
+    --muted: #888;
+    --hint: #555;
+    --u1-bg: #1a2535; --u1-acc: #6ba3d6; --u1-pill: rgba(107,163,214,0.15);
+    --u2-bg: #1a2e25; --u2-acc: #5dbf8a; --u2-pill: rgba(93,191,138,0.15);
+    --u3-bg: #28182e; --u3-acc: #b07fd4; --u3-pill: rgba(176,127,212,0.15);
+    --u4-bg: #2e1f18; --u4-acc: #e08a5a; --u4-pill: rgba(224,138,90,0.15);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    padding: 2.5rem 2rem 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  header h1 em {
+    font-style: italic;
+    opacity: 0.6;
+  }
+  header p {
+    margin-top: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── Unit filter tabs ── */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 1.5rem 2rem;
+    max-width: 860px;
+    width: 100%;
+  }
+  .tab {
+    padding: 7px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: rgba(255,255,255,0.3); color: var(--text); }
+  .tab.active { color: var(--text); font-weight: 500; }
+  .tab[data-u="All"].active  { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.3); }
+  .tab[data-u="U1"].active  { background: var(--u1-pill); border-color: var(--u1-acc); color: var(--u1-acc); }
+  .tab[data-u="U2"].active  { background: var(--u2-pill); border-color: var(--u2-acc); color: var(--u2-acc); }
+  .tab[data-u="U3"].active  { background: var(--u3-pill); border-color: var(--u3-acc); color: var(--u3-acc); }
+  .tab[data-u="U4"].active  { background: var(--u4-pill); border-color: var(--u4-acc); color: var(--u4-acc); }
+
+  /* ── Main area ── */
+  main {
+    width: 100%;
+    max-width: 720px;
+    padding: 0 1.5rem 4rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Progress ── */
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  .progress-text {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .flip-hint {
+    font-size: 0.78rem;
+    color: var(--hint);
+    letter-spacing: 0.04em;
+  }
+  .progress-bar-wrap {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    background: var(--acc, #888);
+  }
+
+  /* ── Flashcard ── */
+  .card-scene {
+    width: 100%;
+    height: 380px;
+    perspective: 1200px;
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+    user-select: none;
+  }
+  @media (max-width: 480px) { .card-scene { height: 420px; } }
+
+  .card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-inner.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    border: 1px solid var(--border2);
+    padding: 2rem 2.2rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    /* unit-specific bg set via JS */
+  }
+  .card-back { transform: rotateY(180deg); }
+
+  /* Card front */
+  .unit-badge {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 999px;
+    display: inline-block;
+    margin-bottom: 1.4rem;
+    width: fit-content;
+  }
+  .card-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .card-question {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--text);
+  }
+  .tap-cue {
+    margin-top: auto;
+    padding-top: 1.2rem;
+    font-size: 0.75rem;
+    color: var(--hint);
+    letter-spacing: 0.05em;
+  }
+
+  /* Card back */
+  .def-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .def-text {
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    border-left: 2px solid var(--border2);
+    padding-left: 0.75rem;
+  }
+  .ans-text {
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.75;
+    margin-bottom: 1.1rem;
+  }
+  .kp-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .kp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .kp-pill {
+    font-size: 0.76rem;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+  }
+
+  /* ── Navigation ── */
+  .nav {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .nav-btn:hover { background: var(--surface2); border-color: rgba(255,255,255,0.25); }
+  .nav-btn:disabled { opacity: 0.25; cursor: default; }
+  .nav-btn:disabled:hover { background: transparent; }
+
+  /* ── Footer ── */
+  footer {
+    width: 100%;
+    text-align: center;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--hint);
+    letter-spacing: 0.04em;
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+
+  /* scrollbar for card */
+  .card-face::-webkit-scrollbar { width: 4px; }
+  .card-face::-webkit-scrollbar-track { background: transparent; }
+  .card-face::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NGT <em>Revision Cards</em></h1>
+  <p>· Next Generation Technology ·</p>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <div class="meta">
+    <span class="progress-text" id="prog-text">1 / 47</span>
+    <span class="flip-hint">tap card to flip</span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="prog-bar"></div>
+  </div>
+
+  <div class="card-scene" id="card-scene" onclick="doFlip()">
+    <div class="card-inner" id="card-inner">
+      <div class="card-face card-front" id="card-front"></div>
+      <div class="card-face card-back"  id="card-back"></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn" id="prev-btn" onclick="go(-1)">← Previous</button>
+    <button class="nav-btn" id="next-btn" onclick="go(1)">Next →</button>
+  </div>
+</main>
+
+<footer>
+  Made by Kaustubh Narayankar · Subject: Next Generation Technology &nbsp;|&nbsp;
+  <a href="https://github.com" target="_blank">Share on GitHub</a>
+</footer>
+
+<script>
+/* ─── Data ─── */
+const UNITS = [
+  { id:"All", label:"All Cards",    acc:"#aaa",     pill:"rgba(255,255,255,0.08)", bg:"#1a1a1a" },
+  { id:"U1",  label:"Unit 1 · Azure Basics",    acc:"#6ba3d6", pill:"rgba(107,163,214,0.12)", bg:"#1a2535" },
+  { id:"U2",  label:"Unit 2 · VM & Storage",    acc:"#5dbf8a", pill:"rgba(93,191,138,0.12)",  bg:"#1a2e25" },
+  { id:"U3",  label:"Unit 3 · Blockchain",      acc:"#b07fd4", pill:"rgba(176,127,212,0.12)", bg:"#28182e" },
+  { id:"U4",  label:"Unit 4 · Flask & Docker",  acc:"#e08a5a", pill:"rgba(224,138,90,0.12)",  bg:"#2e1f18" },
+];
+
+const CARDS = [
+  /* ── Unit 1 ── */
+  { u:"U1", q:"Define cloud and cloud computing.",
+    def:"A network of remote servers accessible over the internet for compute, storage, and software.",
+    ans:"Cloud computing delivers services — servers, storage, databases, networking, and software — through the internet on demand. Providers manage hardware, security, and maintenance while users scale resources as needed without owning physical infrastructure.",
+    kp:["Remote servers over internet","Pay-as-you-go model","Provider manages hardware","On-demand scalability"] },
+
+  { u:"U1", q:"What are the different types of clouds?",
+    def:"Cloud deployment models describe how cloud infrastructure is owned, managed, and accessed.",
+    ans:"Public cloud is shared infrastructure open to all, managed by a third-party. Private cloud is dedicated to one organization for greater security and control. Hybrid cloud combines both, letting data move between them. Community cloud is shared by organizations with common goals (e.g. government departments).",
+    kp:["Public = shared, open","Private = dedicated, secure","Hybrid = flexible mix","Community = shared goals"] },
+
+  { u:"U1", q:"What are the different cloud service models (SaaS, PaaS, IaaS)?",
+    def:"Different levels of services that cloud providers offer depending on how much control users need.",
+    ans:"SaaS (Software as a Service) delivers ready-to-use software over the internet — e.g. Gmail. PaaS (Platform as a Service) provides a platform to build and deploy apps without managing infrastructure. IaaS (Infrastructure as a Service) gives raw compute resources like virtual machines for full user control.",
+    kp:["SaaS = ready software","PaaS = build platform","IaaS = raw infrastructure","Users choose control level"] },
+
+  { u:"U1", q:"What are the key characteristics of cloud computing?",
+    def:"Fundamental features that define how cloud systems operate and deliver services.",
+    ans:"On-demand self-service lets users provision resources automatically. Broad network access enables use from any device. Resource pooling serves many users with shared infrastructure. Rapid elasticity allows instant scaling up or down. Measured service ensures users pay only for what they consume.",
+    kp:["On-demand access","Resource pooling","Rapid elasticity","Pay per use (measured)"] },
+
+  { u:"U1", q:"Compare on-premises versus Azure.",
+    def:"On-premises = locally managed hardware; Azure = cloud-managed services from Microsoft.",
+    ans:"On-premises requires buying, maintaining, and securing your own servers — full control but high upfront cost. Azure lets users access compute and storage over the internet without owning hardware, with Microsoft handling maintenance. Azure offers scalability and flexibility; on-premises suits strict compliance needs.",
+    kp:["On-prem: full control, high cost","Azure: managed, scalable","Azure: no hardware purchase","On-prem: compliance sensitive"] },
+
+  { u:"U1", q:"What are the different Azure compute services?",
+    def:"Cloud-based services providing computing power to run applications in Azure.",
+    ans:"Azure Virtual Machines create cloud computers with full OS control. App Services host web apps and APIs. Azure Functions run serverless code triggered by events. Azure Kubernetes Service (AKS) manages containerized apps. Azure Batch handles large-scale parallel workloads like data processing.",
+    kp:["Virtual Machines (IaaS)","App Services (PaaS)","Functions (serverless)","AKS for containers"] },
+
+  { u:"U1", q:"What are the different Azure application services?",
+    def:"Fully managed platform services for building and deploying applications in Azure.",
+    ans:"Azure App Services support multiple languages (Python, Java, .NET, PHP). They automatically handle server maintenance, OS updates, and security patches. Built-in features include load balancing, auto-scaling, and CI/CD integration — used for web apps, REST APIs, and mobile backends.",
+    kp:["Multi-language support","Auto-scaling built in","CI/CD integration","No server management needed"] },
+
+  { u:"U1", q:"Write a short note on Azure Resource Manager (ARM).",
+    def:"The management and deployment service for organizing and controlling Azure cloud resources.",
+    ans:"ARM groups related resources (VMs, storage, networks) into resource groups for unified management. It supports Infrastructure as Code via JSON ARM templates, enabling automated, repeatable deployments. Role-based access control (RBAC) ensures only authorized users can modify resources.",
+    kp:["Resource groups","ARM templates (JSON)","Infrastructure as Code","Role-based access control"] },
+
+  { u:"U1", q:"What is an Azure Virtual Machine?",
+    def:"A cloud-based computing resource that runs an OS and applications on virtualized hardware.",
+    ans:"Azure VMs behave like physical computers but exist in the cloud. Users choose the OS, RAM, CPU, and storage to match workload needs. They are highly scalable, include built-in security and monitoring, and support automated backups. Primarily used for hosting apps, dev environments, and data analysis.",
+    kp:["Full OS control","Configurable size/specs","Built-in security + monitoring","IaaS model"] },
+
+  { u:"U1", q:"What are the various components of an Azure Virtual Machine?",
+    def:"The essential resources and configurations required to operate a VM in Azure.",
+    ans:"Core components include virtual CPU and RAM for processing power; OS disk and data disks for storage; virtual network and network interface for communication; the OS image defining the environment (Windows/Linux); and security configurations like firewalls and access controls.",
+    kp:["vCPU + RAM","OS disk + data disks","Virtual network interface","Security configurations"] },
+
+  /* ── Unit 2 ── */
+  { u:"U2", q:"What factors are important when configuring and managing a virtual machine?",
+    def:"Key considerations for setting up a cloud VM to perform efficiently and securely.",
+    ans:"VM size determines processing power and memory needed. Storage configuration defines how data is stored and accessed. Network configuration controls communication with other systems. Security settings (authentication, firewall, encryption) protect the system. Ongoing monitoring and maintenance ensure continued performance.",
+    kp:["VM size selection","Storage configuration","Network settings","Security + ongoing monitoring"] },
+
+  { u:"U2", q:"Explain Fault Domain and Update Domain.",
+    def:"Mechanisms to protect VMs from hardware failure and maintenance downtime in Azure.",
+    ans:"A Fault Domain is a group of hardware components sharing a common power or network source — failure affects only that group. An Update Domain is a logical VM group updated together during maintenance, so not all VMs go offline simultaneously. Distributing VMs across both ensures high availability.",
+    kp:["Fault Domain = hardware group","Update Domain = maintenance group","Spread VMs across both","Ensures high availability"] },
+
+  { u:"U2", q:"Explain scaling Azure Virtual Machines.",
+    def:"The process of adjusting VM resources to match changing workload demand.",
+    ans:"Vertical scaling increases or decreases the size of an existing VM (more CPU, RAM, storage). Horizontal scaling adds or removes VM instances to distribute load. Azure's auto-scaling feature adjusts resources automatically based on metrics like CPU usage or traffic levels, optimizing cost and performance.",
+    kp:["Vertical = bigger VM","Horizontal = more VMs","Auto-scaling on metrics","Optimizes cost + performance"] },
+
+  { u:"U2", q:"What are the different types of storage accounts in Azure?",
+    def:"Cloud storage services designed to store different types of data in Microsoft Azure.",
+    ans:"General Purpose accounts support blobs, files, queues, and tables together. Blob storage accounts are optimized for large unstructured data like images and videos. Block blob storage accounts are high-performance, suited for analytics and streaming. File storage accounts provide fully managed file shares accessible via SMB protocol.",
+    kp:["General Purpose: multi-service","Blob: unstructured data","Block Blob: high performance","File: managed file shares"] },
+
+  { u:"U2", q:"Write a short note on Blob Storage in Azure.",
+    def:"A cloud storage service for storing large volumes of unstructured data.",
+    ans:"Blob Storage organizes data into containers (like folders) holding blobs (files). Three blob types exist: block blobs for general files, append blobs for log data, and page blobs for VM disk images. It is highly scalable, redundant, and supports secure global access. Widely used for media, backups, and analytics.",
+    kp:["Containers hold blobs","Block / append / page types","Scalable + redundant","Media, backups, big data"] },
+
+  { u:"U2", q:"Explain File Storage in Azure.",
+    def:"A cloud-based managed file sharing service using standard network file protocols.",
+    ans:"Azure File Storage creates centralized file shares accessible over SMB (Server Message Block) from any OS. Files are organized like traditional folder structures. It supports automatic backups, high availability, and strong access controls — ideal for shared team documents, application config files, and replacing on-premises file servers.",
+    kp:["SMB protocol access","Centralized file shares","Auto backup support","Replaces on-prem file servers"] },
+
+  { u:"U2", q:"Explain Table Storage in Azure.",
+    def:"A NoSQL cloud data storage service for structured data with flexible schema.",
+    ans:"Table Storage stores entities (rows) with flexible, schema-free properties — unlike relational databases where every row must match a fixed schema. It is extremely scalable and cost-effective for large datasets, commonly used for user profiles, IoT sensor readings, and application metadata.",
+    kp:["NoSQL, no fixed schema","Entity and property model","Highly scalable","User profiles, IoT data"] },
+
+  { u:"U2", q:"Explain Queue Storage (Q-Storage) in Azure.",
+    def:"A cloud messaging service enabling asynchronous communication between application components.",
+    ans:"Queue Storage holds messages in a queue, processed one at a time by consumer services. This decouples producers from consumers in distributed systems, enabling systems to handle large workloads without overloading. Messages persist in the queue until successfully processed, improving reliability. Used in order processing and background task systems.",
+    kp:["Async FIFO messaging","Decouples app components","Messages persist until processed","Background task processing"] },
+
+  { u:"U2", q:"What are the different types of redundancy in Azure Storage?",
+    def:"Methods of replicating data across locations to ensure availability and protection.",
+    ans:"LRS (Locally Redundant Storage) makes copies within one data center. ZRS (Zone Redundant Storage) replicates across availability zones in a region. GRS (Geo-Redundant Storage) copies data to a secondary region far away. GZRS combines zone and geographic replication for maximum protection.",
+    kp:["LRS: same data center","ZRS: multiple zones, same region","GRS: secondary remote region","GZRS: maximum protection"] },
+
+  /* ── Unit 3 ── */
+  { u:"U3", q:"Explain blockchain technology and its history.",
+    def:"A distributed digital ledger that records transactions in cryptographically linked blocks.",
+    ans:"Blockchain was introduced in 2008 as the backbone of Bitcoin. Transactions are grouped into blocks linked by cryptographic hashes — changing any block breaks the chain. It is decentralized, with no single authority in control. Over time it expanded from cryptocurrency to finance, supply chains, healthcare, and identity verification.",
+    kp:["Introduced 2008 with Bitcoin","Blocks linked by hashes","Decentralized, immutable","Now used beyond crypto"] },
+
+  { u:"U3", q:"What is a cryptographic key? Explain with an example.",
+    def:"A piece of information used by cryptographic algorithms to encrypt and decrypt data.",
+    ans:"Symmetric keys use the same key for both encrypting and decrypting. Asymmetric keys use a key pair: the public key is shared openly (like an address) and the private key is kept secret. In Bitcoin, the private key signs transactions to prove ownership — ensuring only the rightful owner can authorize transfers.",
+    kp:["Symmetric = single key","Asymmetric = public + private","Private key signs transactions","Public key = address"] },
+
+  { u:"U3", q:"Explain the growth of blockchain technology.",
+    def:"The expansion of blockchain from cryptocurrency to multi-industry applications.",
+    ans:"Starting with Bitcoin in 2008, blockchain grew significantly with the introduction of smart contracts — self-executing agreements requiring no intermediary. Financial institutions, supply chains, governments, and healthcare adopted it for transparency and security. Continuous research has produced faster, more scalable blockchain platforms.",
+    kp:["Bitcoin → smart contracts","Multi-industry adoption","Finance, health, logistics","Scalability improvements ongoing"] },
+
+  { u:"U3", q:"Write a short note on Bitcoin network and wallet.",
+    def:"The Bitcoin network validates transactions; a wallet stores the keys to manage funds.",
+    ans:"The Bitcoin network is a decentralized set of nodes that verify and record transactions on the blockchain ledger. A Bitcoin wallet stores cryptographic key pairs (public and private) used to send and receive Bitcoin — it stores keys, not coins. Wallets can be software-based (mobile/desktop) or hardware-based for offline security.",
+    kp:["Nodes verify transactions","Wallet stores keys, not coins","Public key = receive address","Private key = authorization"] },
+
+  { u:"U3", q:"What is CAP theory and decentralisation using blockchain?",
+    def:"CAP theorem states a distributed system can only guarantee two of three properties at once.",
+    ans:"The three properties are: Consistency (all nodes have the same data), Availability (system responds to every request), and Partition Tolerance (system works despite network splits). Blockchain prioritizes Consistency and Partition Tolerance. Decentralization distributes control across many nodes, removing reliance on any central authority.",
+    kp:["C = same data across nodes","A = always responds","P = survives network splits","Blockchain: C + P priority"] },
+
+  { u:"U3", q:"What are the key elements of blockchain?",
+    def:"Core components that make blockchain a secure and decentralized ledger system.",
+    ans:"Blocks store transaction data plus the hash of the previous block. Transactions represent exchanges recorded on the network. Nodes are computers maintaining copies of the full ledger. Cryptographic hashes ensure data integrity — any tampering is detectable. Consensus mechanisms like Proof of Work allow participants to agree on valid transactions.",
+    kp:["Blocks with cryptographic links","Nodes maintain the ledger","Hashes ensure integrity","Consensus validates new blocks"] },
+
+  { u:"U3", q:"Explain Proof of Work, Merkle Tree, and Merkle Root.",
+    def:"Mechanisms ensuring security and efficient data verification in a blockchain.",
+    ans:"Proof of Work requires miners to solve complex mathematical puzzles to earn the right to add a block — computational effort proves legitimacy. A Merkle Tree organizes all transactions in a block hierarchically, pairing and hashing upward. The Merkle Root is the single top hash representing all transactions; any tampered transaction changes the root.",
+    kp:["PoW: solve puzzle to mine","Merkle Tree: hash hierarchy","Merkle Root: single block summary","Changed transaction = changed root"] },
+
+  { u:"U3", q:"What are the components of a block? Explain them.",
+    def:"The data structures forming each unit of a blockchain ledger.",
+    ans:"A block contains a block header and a transaction list. The header includes the previous block's hash (forming the chain link), a timestamp, a nonce (used in Proof of Work mining), and the Merkle Root (summarizing all transactions). The transaction list contains every individual transaction recorded in that block.",
+    kp:["Header + transaction list","Previous block hash (chain link)","Nonce used in mining","Merkle Root in header"] },
+
+  { u:"U3", q:"What are the components of block headers?",
+    def:"The metadata section of a block containing identification and chain-linking information.",
+    ans:"Block headers include: the version number (protocol version), the previous block's hash (linking the chain), the Merkle Root (representing all transactions), a timestamp, the difficulty target (for Proof of Work), and the nonce (value miners adjust until the puzzle is solved).",
+    kp:["Previous block hash","Merkle Root","Timestamp","Nonce + difficulty target"] },
+
+  { u:"U3", q:"Write a short note on Bitcoin and its relation with blockchain.",
+    def:"Bitcoin is a decentralized digital currency that uses blockchain as its underlying ledger.",
+    ans:"Bitcoin was the first successful cryptocurrency, created in 2008. Every Bitcoin transaction is verified by miners and permanently recorded in blocks linked by cryptographic hashes on the blockchain. The blockchain guarantees that no transaction can be altered or reversed. Bitcoin popularized decentralized finance and inspired hundreds of other blockchain-based applications.",
+    kp:["First cryptocurrency (2008)","Blockchain = Bitcoin's ledger","Miners verify + record","Inspired broader blockchain use"] },
+
+  { u:"U3", q:"What are the different types of Bitcoin users?",
+    def:"Participants in the Bitcoin ecosystem each playing a different role.",
+    ans:"Regular users send and receive Bitcoin for payments. Traders and investors buy and sell Bitcoin to profit from price movements. Miners validate transactions and add new blocks, earning block rewards in return. Developers improve and maintain the Bitcoin protocol and software. Merchants accept Bitcoin as payment for goods and services.",
+    kp:["Users: transact","Miners: validate, earn rewards","Traders: profit seeking","Developers: protocol maintenance"] },
+
+  { u:"U3", q:"What is mempool?",
+    def:"A temporary holding area for unconfirmed transactions waiting to be mined into a block.",
+    ans:"When a Bitcoin transaction is broadcast, network nodes verify it and place it in the mempool (memory pool). Miners then select transactions from the mempool — often prioritizing those with higher fees — and include them in the next block they mine. A congested mempool means longer wait times and higher fees for users.",
+    kp:["Memory pool for pending txns","Miners pick from mempool","Higher fee = faster selection","Congestion raises fees"] },
+
+  { u:"U3", q:"What are the steps to buy and sell Bitcoin?",
+    def:"The process of exchanging fiat currency for Bitcoin and converting it back.",
+    ans:"To buy: create an account on a cryptocurrency exchange, complete identity verification (KYC), deposit funds, and place a buy order at the current market price. Bitcoin is held in a wallet. To sell: place a sell order on the exchange to convert Bitcoin to fiat currency, then withdraw funds to a bank account.",
+    kp:["Register on exchange","Identity verification (KYC)","Buy/sell at market price","Withdraw to bank account"] },
+
+  { u:"U3", q:"Compare Proof of Work and Proof of Stake.",
+    def:"Two consensus mechanisms used to validate transactions and add blocks to a blockchain.",
+    ans:"Proof of Work (PoW) requires miners to solve cryptographic puzzles using heavy computational power — energy-intensive but proven secure. Used by Bitcoin. Proof of Stake (PoS) selects validators based on how much cryptocurrency they lock as collateral (stake) — far more energy-efficient and faster. Used by Ethereum after its Merge in 2022.",
+    kp:["PoW: puzzles, high energy","PoS: stake-based, efficient","PoW = Bitcoin","PoS = Ethereum (post-Merge)"] },
+
+  { u:"U3", q:"What are the different protocol layers in Bitcoin?",
+    def:"Layers of technology that together support the full operation of the Bitcoin network.",
+    ans:"The network layer handles peer-to-peer communication between nodes, broadcasting transactions and blocks. The consensus layer validates transactions using Proof of Work. The data layer is the blockchain ledger storing all confirmed transactions. The application layer includes wallets, exchanges, and interfaces that let users interact with Bitcoin.",
+    kp:["Network: P2P communication","Consensus: PoW validation","Data: blockchain ledger","Application: wallets, exchanges"] },
+
+  { u:"U3", q:"What is the role of CAP theorem in Bitcoin?",
+    def:"CAP theorem explains the trade-offs in designing a distributed network like Bitcoin.",
+    ans:"Bitcoin must balance Consistency (all nodes agree on the same ledger), Availability (system keeps processing), and Partition Tolerance (continues working despite node disconnections). Bitcoin prioritizes Consistency and Partition Tolerance — meaning occasional confirmation delays are acceptable to ensure the ledger remains accurate and the network stays resilient.",
+    kp:["C = ledger agreement","P = survives network splits","A = can be briefly sacrificed","Bitcoin: C + P priority"] },
+
+  { u:"U3", q:"How does a Bitcoin transaction take place?",
+    def:"The step-by-step process of transferring Bitcoin between wallets on the network.",
+    ans:"A user creates a transaction in their wallet, signing it with their private key to prove ownership. The transaction is broadcast to the network, nodes verify its validity, and it enters the mempool. Miners select it, include it in a block by solving Proof of Work, and the confirmed block is added to the blockchain — permanently recording the transfer.",
+    kp:["Signed with private key","Broadcast to all nodes","Waits in mempool","Mined into confirmed block"] },
+
+  /* ── Unit 4 ── */
+  { u:"U4", q:"Write a short note on Flask framework.",
+    def:"A lightweight Python web framework for building web applications and APIs.",
+    ans:"Flask is a micro-framework built on Werkzeug (request handling) and Jinja2 (templating). It provides only the essentials — routing, request handling, and template rendering — with extensions added as needed. Its simplicity makes it popular for REST APIs, small-to-medium web apps, and deploying machine learning models as web services.",
+    kp:["Python micro-framework","Werkzeug + Jinja2 core","Minimal but extensible","APIs, ML model deployment"] },
+
+  { u:"U4", q:"Explain the basic Flask application structure.",
+    def:"The organized file layout separating logic, UI, and static assets in a Flask project.",
+    ans:"A Flask app has app.py as the entry point — it creates the Flask instance and defines all routes. The templates/ folder holds HTML files rendered via Jinja2. The static/ folder stores CSS, JavaScript, and images. Additional files handle database models (models.py), configuration (config.py), and package dependencies (requirements.txt).",
+    kp:["app.py = routes + instance","templates/ = HTML (Jinja2)","static/ = CSS, JS, images","requirements.txt for deps"] },
+
+  { u:"U4", q:"What is routing in Flask?",
+    def:"Mapping a specific URL to a Python function that handles the request.",
+    ans:"In Flask, routes are defined using the @app.route('/path') decorator above a function. When a user visits that URL, Flask matches it and calls the corresponding function. That function processes the request and returns a response — an HTML page, JSON data, or a redirect. This allows one app to serve many pages or API endpoints cleanly.",
+    kp:["@app.route() decorator","URL → function mapping","Function returns response","Multiple endpoints, one app"] },
+
+  { u:"U4", q:"Explain redirecting in Flask.",
+    def:"Automatically sending a user from one URL to another within the application.",
+    ans:"Flask's redirect() function sends an HTTP redirect response, directing the browser to a new URL. It is used after form submissions, successful logins, or completed actions — guiding users to the correct next page like a dashboard or confirmation page. This prevents duplicate form submissions caused by page refreshes.",
+    kp:["redirect() function","Used post-login, post-submit","Prevents form re-submission","Guides user flow"] },
+
+  { u:"U4", q:"How to do error handling in Flask?",
+    def:"Detecting and managing HTTP errors to return helpful responses instead of crashes.",
+    ans:"Flask provides the @app.errorhandler(code) decorator to define custom handlers for specific HTTP errors. Common codes are 404 (page not found) and 500 (internal server error). When an error occurs, Flask calls the registered handler which can return a friendly HTML page, a JSON error message, or log the error for debugging.",
+    kp:["@app.errorhandler() decorator","404 = not found, 500 = server error","Custom error pages returned","Improves UX and debugging"] },
+
+  { u:"U4", q:"Explain Flask templates.",
+    def:"HTML files using the Jinja2 engine to generate dynamic web pages in Flask.",
+    ans:"Templates in Flask live in the templates/ folder and contain HTML with Jinja2 placeholders like {{ variable }} and control structures like {% for item in list %}. Flask's render_template() function processes these files, inserts dynamic data from the Python app, and sends the fully formed HTML to the user's browser.",
+    kp:["Stored in templates/ folder","Jinja2 placeholders + logic","render_template() serves them","Separates design from logic"] },
+
+  { u:"U4", q:"Explain database handling in Flask with an example.",
+    def:"Connecting a Flask app to a database to store, retrieve, update, and delete data.",
+    ans:"Flask uses SQLAlchemy (an ORM) to interact with databases using Python classes instead of raw SQL. A model class defines the table structure. For example, a User model with name and email fields. Flask-SQLAlchemy provides methods for all CRUD operations. It supports SQLite for development, and MySQL or PostgreSQL for production.",
+    kp:["SQLAlchemy ORM","Models represent tables","CRUD via Python classes","SQLite → MySQL/PostgreSQL"] },
+
+  { u:"U4", q:"What is a container?",
+    def:"A lightweight portable unit that packages an application with all its dependencies.",
+    ans:"Containers isolate applications at the OS level without needing a full virtual machine. They bundle the app code, runtime, libraries, and configuration, ensuring the app runs identically on any machine — developer laptop, test server, or production cloud. Containers start faster, use fewer resources, and are far more portable than VMs.",
+    kp:["Packages app + dependencies","OS-level isolation","Lighter and faster than VMs","Same behavior everywhere"] },
+
+  { u:"U4", q:"Explain Docker architecture.",
+    def:"The structure of components in Docker enabling container creation and management.",
+    ans:"The Docker Client is the user interface for issuing commands (docker run, docker build). The Docker Daemon processes those commands and manages containers, images, networks, and volumes. The Docker Registry (e.g. Docker Hub) stores and distributes images. Workflow: client sends command → daemon handles it → pulls image from registry → runs container.",
+    kp:["Client sends commands","Daemon manages everything","Registry stores images","Client → Daemon → Registry flow"] },
+
+  { u:"U4", q:"Explain Dockerfile and Docker images.",
+    def:"Dockerfile is the build recipe; Docker image is the packaged, reusable output.",
+    ans:"A Dockerfile contains step-by-step instructions: select a base image, install dependencies, copy application files, set environment variables, and define the startup command. Running docker build produces a Docker image — a read-only snapshot of the environment. Images are stored in registries and used to spin up multiple identical containers.",
+    kp:["Dockerfile = build instructions","docker build → image","Image = read-only snapshot","One image → many containers"] },
+
+  { u:"U4", q:"What is Kubernetes?",
+    def:"An open-source platform for automating deployment, scaling, and management of containers.",
+    ans:"Kubernetes (K8s) manages containerized applications across clusters of machines. It automatically schedules containers on available nodes, scales them up or down based on demand, restarts failed containers (self-healing), manages networking between services, and handles persistent storage. It is the industry standard for large-scale cloud-native applications.",
+    kp:["Automates container management","Scales + self-heals","Manages networking + storage","Industry standard for cloud-native"] },
+
+  { u:"U4", q:"Explain Kubernetes architecture.",
+    def:"The structure of control plane and worker nodes that together run containerized apps.",
+    ans:"The control plane manages the cluster: the API Server is the single communication hub; the Scheduler assigns pods to nodes based on resources; the Controller Manager maintains desired state; etcd stores all cluster state as a key-value store. Worker nodes run containers: Kubelet communicates with the control plane; Kube-proxy handles networking; the Container Runtime (Docker/containerd) runs the actual containers.",
+    kp:["API Server = control hub","etcd = cluster state store","Kubelet on each worker","Kube-proxy handles networking"] },
+
+  { u:"U4", q:"What is a pod? Explain the Kubernetes deployment process.",
+    def:"A pod is the smallest deployable unit in Kubernetes; deployment manages its desired state.",
+    ans:"A pod groups one or more containers that share a network namespace and storage volumes, always running together on the same node. A Deployment configuration declares how many pod replicas to maintain and which image to use. Kubernetes schedules pods onto worker nodes, monitors their health, replaces failed ones, and supports rolling updates for zero-downtime deployments.",
+    kp:["Pod = grouped containers","Deployment = desired state","Auto-heals failed pods","Rolling updates: zero downtime"] },
+
+  { u:"U4", q:"Explain container lifecycle with an example.",
+    def:"The stages a container goes through from creation to termination.",
+    ans:"A container is created from a Docker image. It enters the running state when the application starts executing. It can be paused (processes frozen) or stopped (application shut down). A stopped container can be restarted or permanently removed. In Kubernetes, failed containers are automatically restarted, completed job containers are removed, and active ones are scaled based on demand.",
+    kp:["Create → Run → Stop/Remove","Pause = frozen state","Restart or permanent remove","K8s automates the lifecycle"] },
+
+  { u:"U4", q:"State the steps to install and configure Kubernetes.",
+    def:"The process of setting up a functional Kubernetes cluster to manage containers.",
+    ans:"Step 1: Install a container runtime (Docker or containerd). Step 2: Install Kubernetes tools — kubeadm (cluster init), kubectl (management CLI), and kubelet (node agent). Step 3: Initialize the control plane with kubeadm init. Step 4: Add worker nodes using the kubeadm join command. Step 5: Configure a CNI networking plugin (e.g. Calico). Step 6: Use kubectl to deploy workloads.",
+    kp:["Install container runtime first","kubeadm init = control plane","Worker nodes join cluster","kubectl manages workloads"] },
+
+  { u:"U4", q:"Explain Kubernetes cluster components.",
+    def:"The different parts of a Kubernetes system working together to manage containerized apps.",
+    ans:"Control plane components: API Server (unified communication gateway), Scheduler (assigns pods to nodes), Controller Manager (ensures desired state is maintained), and etcd (distributed key-value store holding cluster state). Worker node components: Kubelet (reports node status to control plane), Kube-proxy (maintains network rules), and Container Runtime (executes containers).",
+    kp:["etcd stores cluster state","Scheduler places pods on nodes","Kubelet on each worker node","Kube-proxy = network rules"] },
+
+  { u:"U4", q:"Write a short note on Docker Engine and Docker Hub.",
+    def:"Docker Engine runs containers; Docker Hub stores and distributes Docker images.",
+    ans:"Docker Engine consists of the daemon (manages container lifecycle), a REST API, and a CLI (docker commands). It handles building, running, stopping, and removing containers. Docker Hub is a public image registry where developers push and pull images. It hosts official images (e.g. nginx, python, mysql) and allows teams to share private custom images.",
+    kp:["Engine = daemon + REST API + CLI","Daemon manages full lifecycle","Docker Hub = image registry","Official + custom images"] },
+
+  { u:"U4", q:"Draw and explain the application structure of Flask.",
+    def:"The organized file layout of a Flask project separating logic, templates, and static files.",
+    ans:"The root holds app.py (Flask instance, routes, and app logic) and config.py. The templates/ folder contains HTML files using Jinja2 for dynamic rendering. The static/ folder holds CSS, JavaScript, and image files. Optional additions: models.py for database models, requirements.txt for dependencies, and a .env file for environment variables. This clean separation makes the app maintainable and scalable.",
+    kp:["app.py = entry point + routes","templates/ = Jinja2 HTML","static/ = CSS, JS, images","config.py + requirements.txt"] },
+];
+
+/* ─── State ─── */
+let activeUnit = "All";
+let filtered = [...CARDS];
+let idx = 0;
+let flipped = false;
+
+function getUnit(id) { return UNITS.find(u => u.id === id) || UNITS[0]; }
+function getFiltered() { return activeUnit === "All" ? CARDS : CARDS.filter(c => c.u === activeUnit); }
+
+/* ─── Render tabs ─── */
+function renderTabs() {
+  const el = document.getElementById("tabs");
+  el.innerHTML = UNITS.map(u => {
+    const count = u.id === "All" ? CARDS.length : CARDS.filter(c => c.u === u.id).length;
+    const isActive = activeUnit === u.id;
+    return `<button class="tab ${isActive ? "active" : ""}" data-u="${u.id}"
+      style="${isActive ? `border-color:${u.acc};color:${u.acc};background:${u.pill}` : ""}"
+      onclick="setUnit('${u.id}')">${u.label} <span style="opacity:0.5;font-size:0.72rem">(${count})</span></button>`;
+  }).join("");
+}
+
+/* ─── Render card ─── */
+function renderCard() {
+  const c = filtered[idx];
+  const u = getUnit(c.u);
+  const ci = document.getElementById("card-inner");
+  ci.classList.remove("flipped");
+  flipped = false;
+
+  /* front */
+  document.getElementById("card-front").style.background = u.bg;
+  document.getElementById("card-front").innerHTML = `
+    <span class="unit-badge" style="background:${u.pill};color:${u.acc};border:1px solid ${u.acc}22">${u.label}</span>
+    <p class="card-label">Question</p>
+    <p class="card-question">${c.q}</p>
+    <p class="tap-cue">tap to reveal answer →</p>`;
+
+  /* back */
+  document.getElementById("card-back").style.background = u.bg;
+  document.getElementById("card-back").innerHTML = `
+    <span class="unit-badge" style="background:${u.pill};color:${u.acc};border:1px solid ${u.acc}22">${u.label}</span>
+    <p class="def-label">Definition</p>
+    <p class="def-text">${c.def}</p>
+    <p class="ans-text">${c.ans}</p>
+    <p class="kp-label">Key Points</p>
+    <div class="kp-pills">${c.kp.map(k => `<span class="kp-pill">${k}</span>`).join("")}</div>`;
+
+  /* progress */
+  const pct = ((idx + 1) / filtered.length * 100).toFixed(0);
+  document.getElementById("prog-text").textContent = `${idx + 1} / ${filtered.length}`;
+  document.getElementById("prog-bar").style.width = pct + "%";
+  document.getElementById("prog-bar").style.background = u.acc;
+
+  document.getElementById("prev-btn").disabled = idx === 0;
+  document.getElementById("next-btn").disabled = idx === filtered.length - 1;
+}
+
+/* ─── Actions ─── */
+function setUnit(id) {
+  activeUnit = id;
+  filtered = getFiltered();
+  idx = 0;
+  renderTabs();
+  renderCard();
+}
+
+function doFlip() {
+  flipped = !flipped;
+  document.getElementById("card-inner").classList.toggle("flipped", flipped);
+}
+
+function go(dir) {
+  const next = idx + dir;
+  if (next >= 0 && next < filtered.length) { idx = next; renderCard(); }
+}
+
+/* keyboard navigation */
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight" || e.key === "ArrowDown") go(1);
+  if (e.key === "ArrowLeft"  || e.key === "ArrowUp")   go(-1);
+  if (e.key === " " || e.key === "Enter") { e.preventDefault(); doFlip(); }
+});
+
+/* ─── Init ─── */
+renderTabs();
+renderCard();
+</script>
+</body>
+</html>
